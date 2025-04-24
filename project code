@@ -1,0 +1,74 @@
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay
+
+# Load the dataset
+df = pd.read_csv("/content/data.csv", delimiter=';')
+
+# Pie Chart for Target Distribution
+df['Target'].value_counts().plot.pie(autopct='%1.1f%%', startangle=90, title="Student Outcome Distribution", ylabel="")
+plt.axis('equal')
+plt.show()
+
+# Histograms for numerical features
+df.hist(figsize=(15, 10), edgecolor='black')
+plt.suptitle("Feature Distributions - Histograms")
+plt.show()
+
+# Bar Chart for categorical feature
+df['Course'].value_counts().plot(kind='bar', color='skyblue', title="Course Type Distribution")
+plt.xlabel("Course")
+plt.ylabel("Count")
+plt.show()
+
+# Heatmap for correlation
+plt.figure(figsize=(12, 8))
+sns.heatmap(df.corr(numeric_only=True), annot=True, cmap='coolwarm')
+plt.title("Correlation Heatmap")
+plt.show()
+
+# Prepare features and target
+X = df.drop(columns=["Target"])
+y = df["Target"]
+
+# Encode target labels
+label_encoder = LabelEncoder()
+y_encoded = label_encoder.fit_transform(y)
+
+# Scale features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Train/test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X_scaled, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
+)
+
+# Models
+models = {
+    "Logistic Regression": LogisticRegression(max_iter=1000),
+    "Random Forest": RandomForestClassifier(n_estimators=100, random_state=42),
+    "SVM": SVC(),
+    "KNN": KNeighborsClassifier()
+}
+
+# Train and evaluate
+for name, model in models.items():
+    print(f"\nModel: {name}")
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    print(classification_report(y_test, y_pred, target_names=label_encoder.classes_))
+
+    # Confusion Matrix
+    cm = confusion_matrix(y_test, y_pred)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=label_encoder.classes_)
+    disp.plot(cmap='Blues')
+    plt.title(f"Confusion Matrix - {name}")
+    plt.show()
